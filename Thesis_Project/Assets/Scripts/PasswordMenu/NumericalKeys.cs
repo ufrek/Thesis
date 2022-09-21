@@ -29,24 +29,25 @@ using UnityEngine.UI;
 public class NumericalKeys : MonoBehaviour
 {
     //musical variables
-    public string keyLetter = "a";
+    public string keyLetter = "a";  //set in inspector
     public float frequency = 262;  //set in inspector
 
     float downTime = 0;
     float downAuthTime = 0;
     int currentIndex;
     int currentAuthIndex;
-    public AudioSource aS;
-    AudioClip pianoKey;
+    public AudioSource aS;    //NOT USED
+    AudioClip pianoKey;      //NOT USED
 
 
 
     //button variables
     Graphic targetGraphic;
     Color normalColor;
+    Color selectedColor;
     Button button;
 
-    static int currentMode = 1; //default to freePlay
+    static int currentMode = 0; //default to freePlay
     int recordingIndex;
 
     void Awake()
@@ -55,16 +56,21 @@ public class NumericalKeys : MonoBehaviour
         button.interactable = false;
         targetGraphic = GetComponent<Graphic>();
 
+        //get target colors from button component values in inspector
         ColorBlock cb = button.colors;
         cb.disabledColor = cb.normalColor;
+        normalColor = cb.normalColor;
+        selectedColor = cb.selectedColor;
         button.colors = cb;
     }
 
-    // Start is called before the first frame update
+    //Resets key pressed status on startup
     void Start()
     {
-        aS = this.GetComponent<AudioSource>();
-
+         //NOT USED
+        //Creates a sine wave sample for the specified frequency in the instpector that plays back when you press the key.
+        //aS = this.GetComponent<AudioSource>();
+        /*
         int sampleFreq = 44000;
 
 
@@ -75,8 +81,9 @@ public class NumericalKeys : MonoBehaviour
         }
         pianoKey = AudioClip.Create("Test", samples.Length, 1, sampleFreq, false);
         pianoKey.SetData(samples, 0);
-        aS.clip = pianoKey;
-        aS.loop = true;
+        */
+        //aS.clip = pianoKey;
+        //aS.loop = true;
 
         button = GetComponent<Button>();
         button.targetGraphic = null;
@@ -85,16 +92,17 @@ public class NumericalKeys : MonoBehaviour
     }
 
     // Update is called once per frame
+    //Checks for key presses
     void Update()
     {
 
         if (Input.GetKeyDown(keyLetter))
         {
-            aS.Play();
+            //aS.Play();
             keyDown();
 
 
-            if (currentMode == 0) //recording mode
+            if (currentMode == 1) //recording mode
             {
 
                 downTime = Time.time;
@@ -103,7 +111,7 @@ public class NumericalKeys : MonoBehaviour
 
             }
 
-            if (currentMode == 2) //recording mode
+            else if (currentMode == 2) //practice or sign in mode
             {
 
                 downAuthTime = Time.time;
@@ -117,16 +125,16 @@ public class NumericalKeys : MonoBehaviour
         }
         if (Input.GetKeyUp(keyLetter))
         {
-            aS.Stop();
+            //aS.Stop();
             keyUp();
-            if (currentMode == 0)
+            if (currentMode == 1)  //record duration of key press
             {
 
                 PassMaster.NoteReleased(currentIndex, Time.time - downTime);
 
             }
 
-            if (currentMode == 2)
+            if (currentMode == 2)  //check duration of key press against recorded durection
             {
 
                 PassMaster.NoteAuthReleased(currentAuthIndex, Time.time - downAuthTime);
@@ -138,22 +146,26 @@ public class NumericalKeys : MonoBehaviour
 
     }
 
+
+    //set current index in recorded password sequence
     public void setCurrentNoteIndex(int index)
     {
         currentIndex = index;
     }
 
+    //set current index in sequence we are testing against
     public void setCurrentNoteAuthIndex(int index)
     {
         currentAuthIndex = index;
     }
 
+    //update key responses to current selected mode in menu
     public static void changeMode(int mode)
     {
         currentMode = mode;
     }
 
-
+    //NOT USED: Create a synthesized sine wav sample and play it back
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern bool Beep(uint dwFreq, uint dwDuration);
 
@@ -162,6 +174,7 @@ public class NumericalKeys : MonoBehaviour
         Beep(iFrequency, iDuration);
     }
 
+    //NOT USED
     public void PlayKey(uint iDur)
     {
         PlayBeep((uint)frequency, iDur);
@@ -172,18 +185,19 @@ public class NumericalKeys : MonoBehaviour
 
 
     //color change code
-
+    //revert to normal color on key up
     public void keyUp()
     {
         StartColorTween(button.colors.normalColor, false);
     }
-
+    //change to pressed color on key down
     void keyDown()
     {
         StartColorTween(button.colors.pressedColor, false);
         button.onClick.Invoke();
     }
 
+    //fades collors into each other from normal to pressed for a smooth look
     void StartColorTween(Color targetColor, bool instant)
     {
         if (targetGraphic == null)

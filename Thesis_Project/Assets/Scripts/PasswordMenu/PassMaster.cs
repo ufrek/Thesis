@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+
 
 //TODO: 
 
@@ -10,40 +12,36 @@ public class PassMaster : MonoBehaviour
 {
     public static float timingMargin = .05f;//play with this for sensitivity in authentication
 
-    static int currentMode = 1; //default mode is FreePLay
+    static int currentMode = 0; //default mode is FreePLay
     static PassMaster master;
 
     //password variables
-    string userName = "";
     static float[] durations;
-    static string[] keyLetters;
+    static string[] keyNumbers;
     static int currentIndex = 0;
     static int currentAuthIndex = 0;
     static PianoKeys[] keys;
-    bool firstClicked = false;
 
     static float[] durAuth;
     static string[] keyLetterAuth;
     static bool isFailAuth = true;
     
     //text variables that change with mode
-    private static Text prompt;
-    private static Text curMode;
+    private static TMP_Text prompt;
     private static Button recButton;
     private static Button freePlayButton;
     private static Button signInButton;
     //serialization helpers
     //DO NOT USE FOR ANYTHING ELSE
     [SerializeField]
-    private Text sPrompt;
-    [SerializeField]
-    private Text sCurMode;
-    [SerializeField]
-    private Button sRecButton;
+    private TMP_Text sPrompt;
+
     [SerializeField]
     private Button sFreePlayButton;
     [SerializeField]
-    private Button sSignInButton;
+    private Button sRecButton;
+    [SerializeField]
+    private Button sPracticeButton;
 
     private static ModeButton[] buttons;
 
@@ -55,10 +53,9 @@ public class PassMaster : MonoBehaviour
     void Start()
     {
         prompt = sPrompt;
-        curMode = sCurMode;
         recButton = sRecButton;
         freePlayButton = sFreePlayButton;
-        signInButton = sSignInButton;
+        signInButton = sPracticeButton;
 
         buttons = new ModeButton[3];
         buttons[0] = recButton.GetComponent<ModeButton>();
@@ -66,7 +63,7 @@ public class PassMaster : MonoBehaviour
         buttons[2] = signInButton.GetComponent<ModeButton>();
 
         durations = new float[50];
-        keyLetters = new string[50];
+        keyNumbers = new string[50];
 
         durAuth = new float[50];
         keyLetterAuth = new string[50];
@@ -88,23 +85,17 @@ public class PassMaster : MonoBehaviour
         master.StartCoroutine(changeButtons());
         switch (modeID)
         {
-            case 0:
-                prompt.color = new Color(25, 255, 70);
-                curMode.color = new Color(25, 255, 70);
-                prompt.text = "Press Any Key To Begin";
-                curMode.text = "Recording";
-                break;
-            case 1:
+            case 0: //free play
                 prompt.color = new Color(255, 255, 255);
-                curMode.color = new Color(255, 255, 255);
                 prompt.text = "Free Play: Play Anything";
-                curMode.text = "Free Play Mode";
                 break;
-            case 2:
+            case 1: //record mode
+                prompt.color = new Color(25, 255, 70);
+                prompt.text = "Press Any Key To Begin";
+                break;
+            case 2: //practice mode
                 prompt.color = new Color(251, 207, 208);
-                curMode.color = new Color(251, 207, 208);
                 prompt.text = "Press Any Key To Start";
-                curMode.text = "Sign In";
                 break;
         }
 
@@ -146,7 +137,7 @@ public class PassMaster : MonoBehaviour
             }
 
 
-            else if (keyLetters[0] == "")
+            else if (keyNumbers[0] == "")
             {
                 prompt.text = "Please Make a New Pasword First";
                 ModeButton.setHasPassword(false);
@@ -166,7 +157,7 @@ public class PassMaster : MonoBehaviour
     public static void NotePlayed(PianoKeys key)
     {
         //durations and keyLetters
-        keyLetters[currentIndex] = key.keyLetter;
+        keyNumbers[currentIndex] = key.keyLetter;
         key.setCurrentNoteIndex(currentIndex);
         currentIndex++;
         
@@ -176,7 +167,7 @@ public class PassMaster : MonoBehaviour
     public static void NotePlayed(NumericalKeys key)
     {
         //durations and keyLetters
-        keyLetters[currentIndex] = key.keyLetter;
+        keyNumbers[currentIndex] = key.keyLetter;
         key.setCurrentNoteIndex(currentIndex);
         currentIndex++;
 
@@ -221,7 +212,7 @@ public class PassMaster : MonoBehaviour
         for (int i = 0; i < 50; i++)
         {
             durations[i] = 0;
-            keyLetters[i] = "";
+            keyNumbers[i] = "";
             
         }
         currentIndex = 0;
@@ -247,7 +238,7 @@ public class PassMaster : MonoBehaviour
             if (durations[i] == 0)
                 break;
 
-            print(keyLetters[i] + " duration: " + durations[i]);
+            print(keyNumbers[i] + " duration: " + durations[i]);
         }
     }
 
@@ -267,10 +258,10 @@ public class PassMaster : MonoBehaviour
     {
         for (int i = 0; i < 50; i++)
         {
-            if (durations[i] != 0f && keyLetters[i] != "")      //if the note is correctly recorded
+            if (durations[i] != 0f && keyNumbers[i] != "")      //if the note is correctly recorded
                 continue;
-            else if (keyLetters[i] != "" && durations[i] == 0f)
-                keyLetters[i] = "";
+            else if (keyNumbers[i] != "" && durations[i] == 0f)
+                keyNumbers[i] = "";
            
 
 
@@ -309,16 +300,16 @@ public class PassMaster : MonoBehaviour
 
         for (int i = 0; i < 50; i++)
         {
-            if (i > keyLetters.Length - 1 || i > keyLetterAuth.Length - 1) //bounds check
+            if (i > keyNumbers.Length - 1 || i > keyLetterAuth.Length - 1) //bounds check
             {
                 isFailAuth = true;
                 break;
             }
 
-            if (keyLetters[i] == "" && keyLetterAuth[i] == "")
+            if (keyNumbers[i] == "" && keyLetterAuth[i] == "")
                 break;
 
-            if (keyLetters[i] != "")
+            if (keyNumbers[i] != "")
                 passLength++;
 
             if (keyLetterAuth[i] != "")
@@ -340,7 +331,7 @@ public class PassMaster : MonoBehaviour
             int correctDur = 0;
             for (int i = 0; i < passLength + 1; i++)
             {
-                if (keyLetters[i] != keyLetterAuth[i])
+                if (keyNumbers[i] != keyLetterAuth[i])
                 {
                     print("Incorrect Note");
                     isFailAuth = true;

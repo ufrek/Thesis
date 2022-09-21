@@ -4,6 +4,9 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 using UnityEngine.UI;
 
+//NOT USED: Check numericalKeys instead
+
+
 [RequireComponent(typeof(AudioSource))]
 /*Frequency List:
  * C4 = 262
